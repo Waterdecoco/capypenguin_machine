@@ -1,34 +1,28 @@
-**Preparación de la Máquina:**
-    
-    - Descarga de los archivos de la máquina desde https://mega.nz/file/MKk2lbxZ#rflax6X7-DzApyG4QeO0M84BzU13uqcPOq4EQyG3DF0
-    - Descomprime los archivos descargados.
-    - Ejecución del comando `auto_deploy.sh capypenguin.tar` para arrancar la máquina en tu sistema.
-    - Abre una nueva ventana de comandos para dejar correr la máquina.
+Preparación de la Máquina:
+
+Descarga los archivos de la máquina desde el siguiente enlace: https://mega.nz/file/MKk2lbxZ#rflax6X7-DzApyG4QeO0M84BzU13uqcPOq4EQyG3DF0
+Descomprime los archivos descargados.
+Ejecuta el comando ´auto_deploy.sh capypenguin.tar´ para arrancar la máquina en tu sistema.
+Abre una nueva ventana de comandos para dejar correr la máquina.
+Luego de ejecutar estos pasos, procedemos a realizar un escaneo de la máquina utilizando el siguiente comando:
 
 map -p- -sS -sC -sV --min-rate 3000 -n -vvv -Pn 172.17.0.2 -oN /home/kali/Desktop/capypenguin/escaneo
 
+Los resultados del escaneo muestran que la máquina tiene tres puertos abiertos: el puerto 22 para SSH, el puerto 80 para HTTP y el puerto 3306 para MySQL.
 
-PORT     STATE SERVICE REASON         VERSION
-22/tcp   open  ssh     syn-ack ttl 64 OpenSSH 8.9p1 Ubuntu 3ubuntu0.6 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   256 9e:6a:3f:89:de:9d:05:d9:94:32:73:8d:31:e0:a5:eb (ECDSA)
-| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCc7mLI4pzHy9dE63Z2vOWAp2REuSxfi8pRHUfY5BThdbtHNEsWtf4B2XeN6dFclpCRzle+hsNWx0eA280DqPcI=
-|   256 e7:ef:4f:4a:25:86:c9:55:b0:88:0a:8c:79:03:d0:9f (ED25519)
-|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOTvHsMerK/Wxsyjh9XoQEIOj5zR0cpgnz8W0Ct3QmQ8
-80/tcp   open  http    syn-ack ttl 64 Apache httpd 2.4.52 ((Ubuntu))
-| http-methods: 
-|_  Supported Methods: OPTIONS HEAD GET POST
-|_http-server-header: Apache/2.4.52 (Ubuntu)
-|_http-title: Web de Capybaras
-3306/tcp open  mysql   syn-ack ttl 64 MySQL 5.5.5-10.6.16-MariaDB-0ubuntu0.22.04.1
-| mysql-info: 
-|   Protocol: 10
-|   Version: 5.5.5-10.6.16-MariaDB-0ubuntu0.22.04.1
-|   Thread ID: 34
-|   Capabilities flags: 63486
-|   Some Capabilities: SupportsLoadDataLocal, Support41Auth, Speaks41ProtocolOld, IgnoreSigpipes, SupportsCompression, LongColumnFlag, DontAllowDatabaseTableColumn, IgnoreSpaceBeforeParenthesis, SupportsTransactions, ODBCClient, InteractiveClient, Speaks41ProtocolNew, FoundRows, ConnectWithDatabase, SupportsMultipleStatments, SupportsAuthPlugins, SupportsMultipleResults
-|   Status: Autocommit
-|   Salt: DRMlYY1(t3@'@OLmc)@G
-|_  Auth Plugin Name: mysql_native_password
-MAC Address: 02:42:AC:11:00:02 (Unknown)
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+El servidor web está ejecutando Apache 2.4.52 en Ubuntu, y al acceder a la página web, encontramos en el código fuente el nombre de usuario, así como la pista de que la contraseña se encuentra al final del famoso diccionario rockyou.
+
+Para agilizar el proceso de ataque, invertimos el diccionario rockyou utilizando el siguiente comando:
+
+tac /usr/share/wordlists/rockyou.txt > MiRockYou.txt
+
+Sin embargo, al intentar atacar MySQL utilizando Hydra y Medusa, nos encontramos con que la base de datos se bloquea por demasiados intentos. La solución a este problema la encontramos utilizando Ncrack, que logra eludir el bloqueo de la base de datos.
+
+Para atacar MySQL con Ncrack, utilizamos el siguiente comando:
+
+ncrack -u capybarauser -P diccionario.txt 172.17.0.2:3306 mysql
+
+Sin embargo, observamos que el ataque se demora demasiado, por lo que utilizamos el comando tail para recoger solo las filas necesarias del diccionario y crear un nuevo diccionario más pequeño.
+
+A pesar de esto, la base de datos sigue bloqueándose, por lo que decidimos dejar esta máquina para otro momento y continuar con otras tareas de pentesting.
+
